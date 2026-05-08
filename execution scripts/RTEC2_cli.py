@@ -2,7 +2,7 @@ import click
 import os
 import sys
 from zipfile import ZipFile # for Windows OS` 
-import pkg_resources
+from importlib.resources import files
 
 if sys.platform=="win32":
 	sep = "\\"
@@ -19,6 +19,10 @@ def safe_mkdir(directory):
 	'''Make dir if it doesnt exist'''
 	if not os.path.exists(directory):
 		os.mkdir(directory)
+
+def package_resource_path(relative_path):
+	'''Return an absolute path for a packaged resource in RTECv2.'''
+	return str(files("RTECv2").joinpath(relative_path))
 
 def doubleSeperate(path):
 	pathNew = path.replace(sep, doubleSep)
@@ -136,9 +140,9 @@ def cli(use_case, path, prolog, start_time, end_time, window, step, dynamic_grou
 
 	# If the live stream simulation flag is active, simply pass the input parameters to the "live_stream_reasoning.sh" script and return 
 	if live_stream_simulation:
-		stream_provider = doubleSeperate(pkg_resources.resource_filename("RTECv2", "scripts/stream_provider.sh")) 
-		prolog_script = doubleSeperate(pkg_resources.resource_filename("RTECv2", "scripts/continuousQueries.prolog"))
-		live_stream_reasoning_command = doubleSeperate(pkg_resources.resource_filename("RTECv2", "scripts/live_stream_reasoning.sh")) +\
+		stream_provider = doubleSeperate(package_resource_path("scripts/stream_provider.sh")) 
+		prolog_script = doubleSeperate(package_resource_path("scripts/continuousQueries.prolog"))
+		live_stream_reasoning_command = doubleSeperate(package_resource_path("scripts/live_stream_reasoning.sh")) +\
 			" " + use_case + " " 
 		for input_provider in input_providers:
 			live_stream_reasoning_command += input_provider + " "
@@ -169,7 +173,7 @@ def cli(use_case, path, prolog, start_time, end_time, window, step, dynamic_grou
 	parameter_string=addParameterNameless(parameter_string, dgString)
 	parameter_string=addParameter(parameter_string, "stream_rate", stream_rate)
 	
-	continuousQueriesPath = '"' + doubleSeperate(pkg_resources.resource_filename("RTECv2", "scripts/continuousQueries.prolog")) + '"'
+	continuousQueriesPath = '"' + doubleSeperate(package_resource_path("scripts/continuousQueries.prolog")) + '"'
 	if prolog=="swipl":	
 		prologCommand = prolog + " -l " + continuousQueriesPath + \
 				' -g "continuousQueries(' + use_case + ',[' + parameter_string + ']),halt."'
