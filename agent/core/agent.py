@@ -30,6 +30,10 @@ def _fmt_eval(report: EvalReport) -> str:
 # Different providers expose chain-of-thought under different field names.
 _REASONING_FIELDS = ("reasoning_content", "reasoning")
 
+# Max consecutive no-tool-call turns before the loop gives up: the model has
+# stopped acting (only reasoning), so nudging further just wastes iterations.
+_SILENT_LIMIT = 3
+
 
 def _reasoning_of(msg) -> str | None:
     """Surface chain-of-thought from whichever field the provider uses
@@ -605,6 +609,16 @@ class RTECAgent:
                 # Don't exit early if F1 is still low and we have iterations left
                 if state.last_eval is None or state.last_eval.micro_f1 < self.config.convergence_threshold:
                     silent_streak += 1
+                    # Terminal cap: the model has stopped emitting tool calls. Route this
+                    # through the single termination owner as STALLED (return-best applies
+                    # below) instead of nudging indefinitely until max_iters.
+                    if silent_streak >= _SILENT_LIMIT:
+                        state.terminal_status = Status.STALLED.value
+                        self.on_thinking(
+                            f"[no tool call x{silent_streak} — model stopped acting; "
+                            f"stalling at best F1={conv.best.per_fluent_f1:.3f}]"
+                        )
+                        break
                     if silent_streak == 1:
                         nudge = (
                             "You must call compile_rules() to make progress. "

@@ -25,9 +25,13 @@ def _check_singleton_arithmetic(rules: str) -> list[str]:
     """
     errors = []
     arith_ops = re.compile(r'(?<![<>!])([<>]=?|=:=|=\\=)')
-    binding_call = re.compile(
-        r'\b(thresholds|typeSpeed|vesselType|areaType|inRange|holdsAt)\s*\('
-    )
+    # ANY predicate call `foo(...)` can bind its arguments — not just a fixed
+    # allowlist. The old allowlist falsely flagged variables bound by background
+    # predicates (e.g. absoluteAngleDiff/3 binding AngleDiff), which blocked valid
+    # rules outright — drifting could never compile. The genuine mistake this guard
+    # targets (a threshold var used in arithmetic but bound by NOTHING in the clause)
+    # is still caught, because such a var appears in no call at all.
+    binding_call = re.compile(r'\b([a-z][A-Za-z0-9_]*)\s*\(')
     var_pat = re.compile(r'\b([A-Z][A-Za-z0-9_]*)\b')
 
     # Split into clauses at top-level '.'
@@ -68,19 +72,8 @@ def _check_singleton_arithmetic(rules: str) -> list[str]:
             for v in var_pat.findall(call_text):
                 bound.add(v)
 
-        # Also treat variables bound by happensAt as bound
-        for m in re.finditer(r'happensAt\s*\(', body):
-            start = m.end() - 1
-            depth, j = 1, start + 1
-            while j < len(body) and depth > 0:
-                if body[j] == '(':
-                    depth += 1
-                elif body[j] == ')':
-                    depth -= 1
-                j += 1
-            call_text = body[start:j]
-            for v in var_pat.findall(call_text):
-                bound.add(v)
+        # (happensAt and every other predicate call are now covered by the
+        # generalized binding_call above.)
 
         # Find arithmetic comparisons and check each operand
         for m in arith_ops.finditer(body):
