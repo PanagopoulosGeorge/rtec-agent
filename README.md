@@ -2,6 +2,10 @@
 
 RTEC is an open-source [Event Calculus](https://en.wikipedia.org/wiki/Event_calculus) dialect optimised for data stream reasoning. It is written in Prolog and has been tested under [SWI-Prolog](https://www.swi-prolog.org/) in Linux, MacOS and Windows.
 
+> **Using the MCP layer?** To drive RTEC from an LLM agent (synthesize event descriptions
+> from natural language and self-refine), see **[README_MCP.md](README_MCP.md)** for setup
+> and how to configure the MCP tools in a consumer.
+
 # License
 
 RTEC comes with ABSOLUTELY NO WARRANTY. This is free software, and you are welcome to redistribute it under certain conditions; see the [GNU Lesser General Public License v3 for more details](http://www.gnu.org/licenses/lgpl-3.0.html).

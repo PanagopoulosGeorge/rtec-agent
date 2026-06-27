@@ -1,0 +1,32 @@
+# Keep the image small + reproducible: exclude the large dataset (mounted at runtime),
+# local envs, VCS, caches, and agent-generated artifacts.
+
+.git
+.venv
+venv/
+**/__pycache__/
+*.pyc
+
+# Large maritime dataset — mount this at runtime instead of baking it in.
+examples/maritime/dataset/csv/*.csv
+
+# Agent-generated / run outputs (regenerated inside the container or mounted).
+examples/*/workspace/
+examples/*/results/*.txt
+
+# GROUND TRUTH — the held-out reference event descriptions (the solutions) and their
+# compiled forms. Excluded so the agent-facing image physically contains no answers
+# (gold isolation, CLAUDE.md §7). The agent only ever writes/compiles/runs in
+# examples/<app>/workspace/; the run pipeline uses resources/auxiliary (background),
+# never resources/patterns. Gold generation + scoring run on the HOST (full repo), not
+# inside this container.
+examples/*/resources/patterns/rules.prolog
+examples/*/resources/patterns/compiled_rules.prolog
+examples/*/resources/patterns/alternative_pattern_definitions/
+
+# Build / packaging cruft and large docs not needed at runtime.
+build/
+RTEC2.egg-info/
+*.egg-info/
+RTEC_manual.pdf
+resources/llms.docx
