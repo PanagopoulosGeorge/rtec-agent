@@ -45,7 +45,8 @@ intervals* is temporally sorted and contains disjoint intervals.
 | `intersect_all(L,I)` | `I` = intersection of the lists of maximal intervals in `L`. |
 | `relative_complement_all(I',L,I)` | `I` = `I'` minus every list of maximal intervals in `L`. |
 
-`not` expresses negation-by-failure. All head and body predicates of a simple-fluent
+Negation-by-failure is written `\+ Goal` (e.g. `\+ holdsAt(F=V, T)`). RTEC's compiler
+does **not** accept plain `not Goal` — always use `\+`. All head and body predicates of a simple-fluent
 rule are evaluated at the **same** time-point `T`.
 
 **Built-in events** (arity 1, argument is a fluent-value pair):
@@ -66,7 +67,7 @@ For a simple fluent `F`, `F=V` holds at `T` if it was initiated by an event befo
 and not terminated in between (law of inertia). Schema:
 ```
 initiatedAt(F=V, T) :-
-    happensAt(E1, T) [, [not] happensAt(Ei, T) ..., [not] holdsAt(Fk=Vk, T) ...].
+    happensAt(E1, T) [, [\+] happensAt(Ei, T) ..., [\+] holdsAt(Fk=Vk, T) ...].
 ```
 The first body literal is a positive `happensAt`; then a possibly-empty set of
 positive/negative `happensAt`/`holdsAt` and background-knowledge predicates.
@@ -108,6 +109,10 @@ output ⇒ the run fails). For every event description you write, include:
   p(F=V1).                 % a re-initiation of F=V1 postpones that future initiation
   ```
 - **`index/2`** — optional retrieval optimisation: `index(<event or fluent=value>, Arg).`
+- **`collectIntervals/1`** — REQUIRED for an INPUT fluent that arrives in the stream as
+  **intervals** (not as instantaneous events). `collectIntervals(F=V).` tells RTEC to load
+  those interval records; **without it the fluent's intervals are never loaded** and anything
+  that references it via `holdsFor(F=V, I)` recognises nothing.
 
 ## 6. Complete worked example (domain-agnostic toy)
 

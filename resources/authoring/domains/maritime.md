@@ -35,7 +35,17 @@ unavailable** — exclude it when reasoning about heading (e.g. drifting).
 
 | Input fluent | Meaning |
 |---|---|
-| `proximity(Vessel1, Vessel2) = true` | The two vessels are close to each other. (Arrives as intervals; declared via `collectIntervals`.) |
+| `proximity(Vessel1, Vessel2) = true` | The two vessels are close to each other. **Arrives in the stream as intervals**, so it must be loaded with `collectIntervals` (see below). |
+
+`proximity` is an INPUT fluent over vessel **pairs**. To use it, your program MUST declare:
+```prolog
+collectIntervals(proximity(_,_)=true).            % load the interval stream (else holdsFor returns [])
+dynamicDomain(vpair(_Vessel1, _Vessel2)).         % the pair domain, discovered from input
+grounding(proximity(Vessel1, Vessel2)=true) :- vpair(Vessel1, Vessel2).
+```
+Output fluents over vessel pairs (`tugging`, `rendezVous`, `pilotOps`) are grounded via
+`vpair` too, e.g. `grounding(tugging(V1,V2)=true) :- vpair(V1, V2).` Without
+`collectIntervals`, `holdsFor(proximity(...), I)` is empty and these fluents never fire.
 
 ## 3. Background-knowledge predicates
 
@@ -98,7 +108,7 @@ initiatedAt(stopped(Vessel)=nearPorts, T) :-
     holdsAt(withinArea(Vessel, nearPorts)=true, T).
 initiatedAt(stopped(Vessel)=farFromPorts, T) :-
     happensAt(stop_start(Vessel), T),
-    not holdsAt(withinArea(Vessel, nearPorts)=true, T).
+    \+ holdsAt(withinArea(Vessel, nearPorts)=true, T).
 terminatedAt(stopped(Vessel)=_Status, T) :-
     happensAt(stop_end(Vessel), T).
 terminatedAt(stopped(Vessel)=_Status, T) :-
@@ -130,8 +140,8 @@ not near a port/coast, for longer than a minimum duration. Shows `union_all`,
 ```prolog
 holdsFor(rendezVous(Vessel1, Vessel2)=true, I) :-
     holdsFor(proximity(Vessel1, Vessel2)=true, Ip),
-    not oneIsTug(Vessel1, Vessel2),
-    not oneIsPilot(Vessel1, Vessel2),
+    \+ oneIsTug(Vessel1, Vessel2),
+    \+ oneIsPilot(Vessel1, Vessel2),
     holdsFor(lowSpeed(Vessel1)=true, Il1),
     holdsFor(lowSpeed(Vessel2)=true, Il2),
     holdsFor(stopped(Vessel1)=farFromPorts, Is1),
